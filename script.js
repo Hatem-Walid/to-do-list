@@ -1,4 +1,6 @@
-let tasks = [];
+// 1. استرجاع البيانات من Local Storage عند البداية
+// بنشوف لو فيه داتا متسيفة، بنحولها من string لـ Array، لو مفيش بنبدأ بمصفوفة فاضية
+let tasks = JSON.parse(localStorage.getItem("myTasks")) || [];
 let currentFilter = "all";
 let dragStartIndex = null;
 
@@ -6,6 +8,12 @@ const input = document.querySelector("#taskInput");
 const addBtn = document.querySelector("#addBtn");
 const taskList = document.querySelector("#taskList");
 const filterBtns = document.querySelectorAll(".filter-btn");
+
+// 2. دالة الحفظ (Auto-save)
+// بنناديها كل ما يحصل تغيير في الـ tasks
+const saveTasksToLocalStorage = () => {
+  localStorage.setItem("myTasks", JSON.stringify(tasks));
+};
 
 addBtn.addEventListener("click", () => addTask());
 
@@ -29,6 +37,7 @@ const addTask = () => {
   });
 
   input.value = "";
+  saveTasksToLocalStorage(); // حفظ التغيير
   renderTasks();
 };
 
@@ -42,7 +51,7 @@ const renderTasks = () => {
   });
 
   filteredTasks.forEach((task, displayIndex) => {
-    const actualIndex = tasks.findIndex(t => t.id === task.id); // عشان نعرف ترتيبه الأصلي
+    const actualIndex = tasks.findIndex(t => t.id === task.id);
 
     const li = document.createElement("li");
     li.setAttribute("draggable", "true");
@@ -79,11 +88,13 @@ const createButton = (label, onClick) => {
 const toggleTask = id => {
   const task = tasks.find(t => t.id === id);
   task.done = !task.done;
+  saveTasksToLocalStorage(); // حفظ التغيير
   renderTasks();
 };
 
 const deleteTask = id => {
   tasks = tasks.filter(t => t.id !== id);
+  saveTasksToLocalStorage(); // حفظ التغيير
   renderTasks();
 };
 
@@ -92,6 +103,7 @@ const editTask = id => {
   const newName = prompt("Edit task:", task.name);
   if (newName !== null) {
     task.name = newName.trim() || task.name;
+    saveTasksToLocalStorage(); // حفظ التغيير
     renderTasks();
   }
 };
@@ -102,12 +114,13 @@ const handleDragStart = e => {
 };
 
 const handleDragOver = e => {
-  e.preventDefault(); // مهم جدًا عشان drop تشتغل
+  e.preventDefault();
 };
 
 const handleDrop = e => {
   const dragEndIndex = +e.currentTarget.dataset.index;
   swapTasks(dragStartIndex, dragEndIndex);
+  saveTasksToLocalStorage(); // حفظ الترتيب الجديد
   renderTasks();
 };
 
@@ -116,6 +129,9 @@ const swapTasks = (from, to) => {
   tasks[from] = tasks[to];
   tasks[to] = temp;
 };
+
+// رندر المهام لأول مرة عند فتح الصفحة لو فيه داتا متسيفة
+renderTasks();
 
 setInterval(() => {
   if (tasks.length && tasks.every(task => task.done)) {
